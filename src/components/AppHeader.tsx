@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 
 const links = [
   { to: "/", label: "Overview" },
+  { to: "/judge-mode", label: "Judge Mode" },
   { to: "/dashboard", label: "Clinical Obligations" },
   { to: "/agent-review", label: "Claude Review" },
   { to: "/intake", label: "Result Intake" },
@@ -35,7 +36,7 @@ export function AppHeader() {
             </span>
           </span>
         </Link>
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {links.map((link) => {
             const active =
               link.to === "/" ? pathname === "/" : pathname.startsWith(link.to);
