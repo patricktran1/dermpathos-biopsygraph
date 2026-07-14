@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feature/closed-care-loop
+      - feature/abridge-anthropic-ehr-stack
   pull_request:
     branches:
       - main
@@ -34,10 +34,19 @@ jobs:
           set -o pipefail
           npx tsc --noEmit 2>&1 | tee tsc.log
 
-      - name: Upload TypeScript diagnostics
+      - name: Audit legacy hackathon stack references
+        if: always()
+        shell: bash
+        run: |
+          grep -R -n -E 'Butterbase|butterbase|Neo4j|neo4j|RocketRide|rocketride|Daytona|daytona|Cognee|cognee' src package.json README.md > legacy-stack.log || true
+          cat legacy-stack.log
+
+      - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: typescript-diagnostics
-          path: tsc.log
+          name: build-diagnostics
+          path: |
+            tsc.log
+            legacy-stack.log
           if-no-files-found: error
