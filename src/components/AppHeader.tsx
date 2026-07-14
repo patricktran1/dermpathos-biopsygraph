@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 const links = [
   { to: "/", label: "Overview" },
   { to: "/dashboard", label: "Clinical Obligations" },
+  { to: "/agent-review", label: "Claude Review" },
   { to: "/intake", label: "Result Intake" },
   { to: "/architecture", label: "Architecture" },
 ] as const;
