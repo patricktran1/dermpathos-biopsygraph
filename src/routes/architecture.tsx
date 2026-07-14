@@ -8,66 +8,68 @@ import { CogneeMemoryExportPanel } from "@/components/CogneeMemoryExportPanel";
 export const Route = createFileRoute("/architecture")({
   head: () => ({
     meta: [
-      { title: "Integration Architecture · DermPathOS" },
+      { title: "Architecture · Closed Care Loop" },
       {
         name: "description",
         content:
-          "How DermPathOS BiopsyGraph connects to Butterbase, Neo4j, and RocketRide Cloud.",
+          "How Closed Care Loop separates clinical-record interpretation, deterministic policy, bounded action, and verified closure.",
       },
     ],
   }),
   component: ArchitecturePage,
 });
 
-const cards = [
+const layers = [
   {
-    tag: "Backend + AI gateway",
-    title: "Butterbase",
+    number: "01",
+    tag: "Interpret",
+    title: "Claude model boundary",
     items: [
-      "App backend",
-      "User and clinic records",
-      "Pathology case storage",
-      "Task records",
-      "Notification status",
-      "AI model gateway for case summaries",
+      "Reads messy pathology and workflow context",
+      "Returns schema-validated operational risks",
+      "Quotes evidence from the supplied record",
+      "Surfaces ambiguity rather than resolving it silently",
     ],
-    fn: "submitToButterbase() · generateSummaryViaButterbaseGateway()",
+    contract: "POST /api/agent/analyze → validated structured interpretation",
     tone: "lavender",
   },
   {
-    tag: "Relationship graph",
-    title: "Neo4j",
+    number: "02",
+    tag: "Govern",
+    title: "Deterministic policy engine",
     items: [
-      "BiopsyGraph relationship model",
-      "Nodes: Patient, Lesion, Biopsy, PathologyResult, Diagnosis, RequiredAction, NotificationStatus, TreatmentPlan, Task, Physician",
-      "Relationships: HAS_LESION, WAS_BIOPSIED, RETURNED_RESULT, INDICATES_DIAGNOSIS, REQUIRES_ACTION, HAS_NOTIFICATION_STATUS, HAS_TREATMENT_STATUS, CREATES_TASK, ASSIGNED_TO",
-      "Graph traversal to identify missing follow-up steps",
+      "Controls urgency, deadlines, and permitted actions",
+      "Blocks laterality and body-site conflicts",
+      "Defines required evidence for each workflow state",
+      "Prevents reviewed or scheduled from being mislabeled closed",
     ],
-    fn: "queryBiopsyGraphNeo4j()",
+    contract: "assessCase() → state, blockers, actions, closure eligibility",
     tone: "gold",
   },
   {
-    tag: "Deployed pipeline",
-    title: "RocketRide Cloud",
+    number: "03",
+    tag: "Act",
+    title: "Bounded workflow adapters",
     items: [
-      "Deployed pathology follow-up workflow",
-      "Extract pathology fields",
-      "Classify diagnosis / action required",
-      "Query Neo4j BiopsyGraph",
-      "Generate explanation",
-      "Create operational task",
+      "Drafts patient outreach for human approval",
+      "Creates internal follow-up and scheduling work",
+      "Reopens canceled or incomplete care",
+      "Routes conflicting evidence to a clinician",
     ],
-    fn: "callRocketRidePipeline() · createFollowUpTask()",
+    contract: "applyAgentAction() → audited state transition",
     tone: "moderate",
   },
   {
-    tag: "Optional sandbox",
-    title: "Daytona",
+    number: "04",
+    tag: "Verify",
+    title: "Clinical obligation graph",
     items: [
-      "Sandbox for testing follow-up rules",
-      "Example test: melanoma in situ with no scheduled excision must create urgent physician review task",
+      "Links patient, biopsy, diagnosis, communication, scheduling, and treatment",
+      "Reconciles new evidence against the open obligation",
+      "Keeps the case open while required proof is missing",
+      "Creates an auditable verified-closure event",
     ],
-    fn: "—",
+    contract: "evidence graph → open obligation or verified closure",
     tone: "routine",
   },
 ] as const;
@@ -81,85 +83,106 @@ const toneMap = {
 
 function ArchitecturePage() {
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
+    <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-10">
         <div className="chip bg-[var(--gold-soft)] text-[var(--gold)]">
-          Developer view
+          Safety-first agent architecture
         </div>
-        <h1 className="mt-4 font-display text-3xl font-semibold">
-          Hackathon Integration Architecture
+        <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold md:text-4xl">
+          Claude interprets the record. Policy governs the workflow. Evidence closes
+          the loop.
         </h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          The MVP uses live server-side integrations for Butterbase and Neo4j.
-          RocketRide and Daytona remain server-side sponsor integrations that
-          can be configured without exposing secrets in the browser.
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          Closed Care Loop does not hand clinical workflow control to a language
+          model. The model converts fragmented text into a reviewable structure;
+          typed rules determine what the system may do and what evidence is required
+          before care can be considered complete.
         </p>
       </div>
 
-      <div className="mb-8">
-        <div className="mb-3 rounded-md border border-[var(--gold)]/30 bg-[var(--gold-soft)]/40 px-3 py-2 text-xs text-[var(--gold)]">
-          Dev-only integration tests. Normal case submissions now auto-save to
-          Butterbase and auto-sync to BiopsyGraph — no manual click needed.
+      <div className="mb-8 rounded-xl border border-[var(--lavender)]/20 bg-[var(--lavender-soft)]/35 p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lavender)]">
+          Fail-safe behavior
         </div>
-        <ButterbaseSetupPanel />
-        <div className="h-6" />
-        <BiopsyGraphPanel />
-        <div className="h-6" />
-        <RocketRidePanel />
-        <div className="h-6" />
-        <DaytonaPanel />
-        <div className="h-6" />
-        <CogneeMemoryExportPanel />
+        <div className="mt-2 text-lg font-semibold">
+          Model failure never becomes silent workflow success.
+        </div>
+        <p className="mt-1 max-w-4xl text-sm leading-relaxed text-foreground/70">
+          Missing credentials, API failure, invalid JSON, or schema rejection routes
+          to a visibly labeled deterministic fallback. Conflicting evidence blocks
+          automation and requires human resolution.
+        </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {cards.map((card) => (
-          <div key={card.title} className="card-clinical p-6">
-            <div
-              className={`chip ${toneMap[card.tone]}`}
-            >
-              {card.tag}
+        {layers.map((layer) => (
+          <div key={layer.number} className="card-clinical p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className={`chip ${toneMap[layer.tone]}`}>{layer.tag}</div>
+              <div className="font-mono text-xs text-muted-foreground">
+                {layer.number}
+              </div>
             </div>
-            <h2 className="mt-3 font-display text-2xl font-semibold">
-              {card.title}
+            <h2 className="mt-4 font-display text-2xl font-semibold">
+              {layer.title}
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-foreground/80">
-              {card.items.map((i) => (
-                <li key={i} className="flex gap-2">
+              {layer.items.map((item) => (
+                <li key={item} className="flex gap-2">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--lavender)]" />
-                  <span>{i}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
             <div className="mt-5 rounded-md bg-muted/60 px-3 py-2 font-mono text-xs text-muted-foreground">
-              {card.fn}
+              {layer.contract}
             </div>
           </div>
         ))}
       </div>
 
       <div className="card-clinical mt-8 p-6">
-        <h3 className="font-display text-lg font-semibold">Data flow</h3>
+        <h3 className="font-display text-lg font-semibold">Runtime data flow</h3>
         <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-3 text-xs font-semibold">
           {[
-            "Intake form",
-            "/api/cases/submit",
-            "Butterbase biopsy_cases",
-            "Butterbase follow_up_tasks",
-            "Neo4j BiopsyGraph MERGE",
-            "Neo4j verification",
-            "RocketRide safety-agent if configured",
-            "Dashboard status",
-          ].map((n, i, arr) => (
-            <div key={n} className="flex items-center gap-1">
+            "Clinical source records",
+            "Claude interpretation",
+            "Zod validation",
+            "Deterministic policy",
+            "Human approval or safety block",
+            "Bounded action",
+            "Evidence reconciliation",
+            "Verified closure",
+          ].map((node, index, array) => (
+            <div key={node} className="flex items-center gap-1">
               <span className="rounded-lg border border-border bg-card px-3 py-2 font-mono">
-                {n}
+                {node}
               </span>
-              {i < arr.length - 1 && <span className="text-muted-foreground">→</span>}
+              {index < array.length - 1 && (
+                <span className="text-muted-foreground">→</span>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      <details className="card-clinical mt-8 p-6">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Optional integration diagnostics
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          These adapters are inherited from the original BiopsyGraph prototype.
+          Their panels report actual runtime configuration and should only be
+          described as live when the corresponding end-to-end check succeeds.
+        </p>
+        <div className="mt-6 space-y-6">
+          <ButterbaseSetupPanel />
+          <BiopsyGraphPanel />
+          <RocketRidePanel />
+          <DaytonaPanel />
+          <CogneeMemoryExportPanel />
+        </div>
+      </details>
     </div>
   );
 }
