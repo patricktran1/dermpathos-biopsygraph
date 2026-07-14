@@ -34,12 +34,17 @@ jobs:
           set -o pipefail
           npx tsc --noEmit 2>&1 | tee tsc.log
 
-      - name: Audit legacy hackathon stack references
-        if: always()
+      - name: Reject previous hackathon stack references
         shell: bash
         run: |
-          grep -R -n -E 'Butterbase|butterbase|Neo4j|neo4j|RocketRide|rocketride|Daytona|daytona|Cognee|cognee' src package.json README.md > legacy-stack.log || true
-          cat legacy-stack.log
+          pattern='Butterbase|butterbase|Neo4j|neo4j|RocketRide|rocketride|Daytona|daytona|Cognee|cognee'
+          if grep -R -n -E "$pattern" src package.json README.md > legacy-stack.log; then
+            cat legacy-stack.log
+            echo "Previous hackathon stack references are not allowed in the event build."
+            exit 1
+          fi
+          : > legacy-stack.log
+          echo "Legacy stack audit passed."
 
       - name: Upload diagnostics
         if: always()
