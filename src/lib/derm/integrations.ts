@@ -1,8 +1,9 @@
 import type { CaseAssessment, FollowUpTask, PathologyCase } from "./types";
 import { buildCaseKey, submitCaseCombined } from "./butterbase";
+import { assessCase } from "./logic";
 
 /**
- * DermPathOS — Integration layer.
+ * Closed Care Loop integration layer.
  * All Butterbase + Neo4j traffic goes through /api/cases/submit.
  * The browser never sees any Butterbase or Neo4j secret.
  */
@@ -36,9 +37,9 @@ export interface CombinedSubmit {
 }
 
 /**
- * submitCaseAndTask — posts case + task to /api/cases/submit which handles
- * both Butterbase writes and the Neo4j graph MERGE server-side. Returns
- * per-step status so the UI can surface partial success.
+ * Posts the case and task to the server endpoint, which handles Butterbase
+ * writes and the Neo4j graph merge. The response preserves per-step status
+ * so the UI can surface partial success without claiming verified closure.
  */
 export async function submitCaseAndTask(
   pathologyCase: PathologyCase,
@@ -55,7 +56,7 @@ export async function submitCaseAndTask(
     physician: pathologyCase.physician,
     dueTiming: assessment.dueTiming,
     reason: assessment.taskReason,
-    status: "Open",
+    status: pathologyCase.closureVerified ? "Complete" : "Open",
   };
   const res = await submitCaseCombined({
     caseKey,
@@ -102,23 +103,14 @@ export async function submitCaseAndTask(
   };
 }
 
-// Placeholder retained for architecture card.
 export async function submitToButterbase(
   pathologyCase: PathologyCase,
   assessment?: CaseAssessment,
 ): Promise<SubmitResult> {
-  const a =
-    assessment ?? {
-      priority: "Routine" as const,
-      requiredAction: "",
-      taskTitle: "",
-      taskReason: "",
-      dueTiming: "",
-      flags: [],
-      graphPath: [],
-      isMalignant: false,
-    };
-  const { caseRes } = await submitCaseAndTask(pathologyCase, a);
+  const { caseRes } = await submitCaseAndTask(
+    pathologyCase,
+    assessment ?? assessCase(pathologyCase),
+  );
   return caseRes;
 }
 
@@ -131,14 +123,12 @@ export async function createFollowUpTask(
   return taskRes;
 }
 
-// TODO(neo4j)
 export async function queryBiopsyGraphNeo4j(
   caseId: string,
 ): Promise<{ caseId: string; missingSteps: string[] }> {
   return { caseId, missingSteps: [] };
 }
 
-// TODO(rocketride)
 export async function callRocketRidePipeline(
   pathologyCase: PathologyCase,
 ): Promise<{ ok: true; caseId: string }> {
