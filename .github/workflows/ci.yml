@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Build
+      - name: Build and regenerate route tree
         run: npm run build
+
+      - name: Typecheck generated application
+        run: npx tsc --noEmit
