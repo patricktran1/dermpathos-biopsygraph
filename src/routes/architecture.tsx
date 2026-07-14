@@ -1,9 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ButterbaseSetupPanel } from "@/components/ButterbaseSetupPanel";
-import { BiopsyGraphPanel } from "@/components/BiopsyGraphPanel";
-import { RocketRidePanel } from "@/components/RocketRidePanel";
-import { DaytonaPanel } from "@/components/DaytonaPanel";
-import { CogneeMemoryExportPanel } from "@/components/CogneeMemoryExportPanel";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/architecture")({
   head: () => ({
@@ -12,7 +7,7 @@ export const Route = createFileRoute("/architecture")({
       {
         name: "description",
         content:
-          "How Closed Care Loop separates clinical-record interpretation, deterministic policy, bounded action, and verified closure.",
+          "How Closed Care Loop connects Abridge encounter intelligence, Anthropic tool use, deterministic safety policy, and EHR adapters.",
       },
     ],
   }),
@@ -22,54 +17,54 @@ export const Route = createFileRoute("/architecture")({
 const layers = [
   {
     number: "01",
-    tag: "Interpret",
-    title: "Claude model boundary",
+    tag: "Understand",
+    title: "Abridge encounter adapter",
     items: [
-      "Reads messy pathology and workflow context",
-      "Returns schema-validated operational risks",
-      "Quotes evidence from the supplied record",
-      "Surfaces ambiguity rather than resolving it silently",
+      "Receives the event-provided conversation, note, or encounter payload",
+      "Preserves linked evidence and source quotations",
+      "Converts vendor fields into one stable obligation contract",
+      "Keeps the exact Abridge schema isolated to one adapter file",
     ],
-    contract: "POST /api/agent/analyze → validated structured interpretation",
+    contract: "unknown Abridge payload → EncounterInput",
     tone: "lavender",
   },
   {
     number: "02",
-    tag: "Govern",
-    title: "Deterministic policy engine",
+    tag: "Reason",
+    title: "Anthropic tool-use agent",
     items: [
-      "Controls urgency, deadlines, and permitted actions",
-      "Blocks laterality and body-site conflicts",
-      "Defines required evidence for each workflow state",
-      "Prevents reviewed or scheduled from being mislabeled closed",
+      "Searches the EHR before proposing an action",
+      "Selects typed tools rather than returning unstructured instructions",
+      "Receives tool results and continues the reasoning loop",
+      "Falls back visibly when model access or validation fails",
     ],
-    contract: "assessCase() → state, blockers, actions, closure eligibility",
+    contract: "POST /api/agent/orchestrate → tool calls + auditable trace",
     tone: "gold",
   },
   {
     number: "03",
-    tag: "Act",
-    title: "Bounded workflow adapters",
+    tag: "Govern",
+    title: "Approval and policy boundary",
     items: [
-      "Drafts patient outreach for human approval",
-      "Creates internal follow-up and scheduling work",
-      "Reopens canceled or incomplete care",
-      "Routes conflicting evidence to a clinician",
+      "Allows read-only evidence searches without approval",
+      "Blocks EHR writes until the user approves the exact tool",
+      "Never sends patient communication autonomously",
+      "Prevents a task or appointment from being mislabeled completed care",
     ],
-    contract: "applyAgentAction() → audited state transition",
+    contract: "tool call + approval set → execute, preview, or block",
     tone: "moderate",
   },
   {
     number: "04",
-    tag: "Verify",
-    title: "Clinical obligation graph",
+    tag: "Execute",
+    title: "EHR adapter layer",
     items: [
-      "Links patient, biopsy, diagnosis, communication, scheduling, and treatment",
-      "Reconciles new evidence against the open obligation",
-      "Keeps the case open while required proof is missing",
-      "Creates an auditable verified-closure event",
+      "Uses OpenEMR FHIR as the reference implementation",
+      "Creates Task, Communication, and ServiceRequest resources",
+      "Reads Procedure and workflow evidence for closure verification",
+      "Can be replaced by another EHR adapter without changing the agent",
     ],
-    contract: "evidence graph → open obligation or verified closure",
+    contract: "EhrAdapter → OpenEMR FHIR or safe mock mode",
     tone: "routine",
   },
 ] as const;
@@ -86,31 +81,30 @@ function ArchitecturePage() {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-10">
         <div className="chip bg-[var(--gold-soft)] text-[var(--gold)]">
-          Safety-first agent architecture
+          Event-aligned architecture
         </div>
         <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold md:text-4xl">
-          Claude interprets the record. Policy governs the workflow. Evidence closes
-          the loop.
+          Abridge supplies intelligence. Claude operates tools. The EHR supplies proof.
         </h1>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Closed Care Loop does not hand clinical workflow control to a language
-          model. The model converts fragmented text into a reviewable structure;
-          typed rules determine what the system may do and what evidence is required
-          before care can be considered complete.
+          The prior hackathon sponsor stack has been removed from the active product
+          architecture. Closed Care Loop now has three clean external boundaries:
+          Abridge for encounter intelligence, Anthropic for agentic tool selection,
+          and a replaceable EHR adapter for reads and writes.
         </p>
       </div>
 
       <div className="mb-8 rounded-xl border border-[var(--lavender)]/20 bg-[var(--lavender-soft)]/35 p-5">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lavender)]">
-          Fail-safe behavior
+          Integration rule
         </div>
         <div className="mt-2 text-lg font-semibold">
-          Model failure never becomes silent workflow success.
+          Vendor payloads stop at adapters. Clinical safety rules stay inside the product.
         </div>
         <p className="mt-1 max-w-4xl text-sm leading-relaxed text-foreground/70">
-          Missing credentials, API failure, invalid JSON, or schema rejection routes
-          to a visibly labeled deterministic fallback. Conflicting evidence blocks
-          automation and requires human resolution.
+          The exact Abridge resources provided on Saturday can be mapped in one file.
+          OpenEMR can be exchanged for another EHR without rewriting Claude prompts,
+          approval controls, obligation states, or closure criteria.
         </p>
       </div>
 
@@ -142,17 +136,25 @@ function ArchitecturePage() {
       </div>
 
       <div className="card-clinical mt-8 p-6">
-        <h3 className="font-display text-lg font-semibold">Runtime data flow</h3>
-        <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-3 text-xs font-semibold">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-display text-lg font-semibold">Runtime data flow</h3>
+          <Link
+            to="/integration-lab"
+            className="rounded-lg bg-[var(--lavender)] px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Run live trace
+          </Link>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center gap-x-1 gap-y-3 text-xs font-semibold">
           {[
-            "Clinical source records",
-            "Claude interpretation",
-            "Zod validation",
-            "Deterministic policy",
-            "Human approval or safety block",
-            "Bounded action",
-            "Evidence reconciliation",
-            "Verified closure",
+            "Abridge encounter payload",
+            "Normalized obligation",
+            "Claude tool selection",
+            "EHR evidence search",
+            "Approval gate",
+            "OpenEMR adapter",
+            "Tool result",
+            "Closure verification",
           ].map((node, index, array) => (
             <div key={node} className="flex items-center gap-1">
               <span className="rounded-lg border border-border bg-card px-3 py-2 font-mono">
@@ -166,23 +168,46 @@ function ArchitecturePage() {
         </div>
       </div>
 
-      <details className="card-clinical mt-8 p-6">
-        <summary className="cursor-pointer text-sm font-semibold">
-          Optional integration diagnostics
-        </summary>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          These adapters are inherited from the original BiopsyGraph prototype.
-          Their panels report actual runtime configuration and should only be
-          described as live when the corresponding end-to-end check succeeds.
-        </p>
-        <div className="mt-6 space-y-6">
-          <ButterbaseSetupPanel />
-          <BiopsyGraphPanel />
-          <RocketRidePanel />
-          <DaytonaPanel />
-          <CogneeMemoryExportPanel />
-        </div>
-      </details>
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <ConfigCard
+          title="Safe demo mode"
+          detail="No external credentials required. The full agent tool trace runs against a deterministic mock EHR, and writes remain approval-gated."
+          values={["forceMockEhr=true", "ANTHROPIC_API_KEY optional"]}
+        />
+        <ConfigCard
+          title="OpenEMR reference mode"
+          detail="Point the adapter at the OpenEMR FHIR base URL and token. Writes remain previews unless they are approved and explicitly enabled server-side."
+          values={[
+            "OPENEMR_FHIR_BASE_URL",
+            "OPENEMR_ACCESS_TOKEN",
+            "OPENEMR_ALLOW_WRITES=true",
+          ]}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ConfigCard({
+  title,
+  detail,
+  values,
+}: {
+  title: string;
+  detail: string;
+  values: string[];
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="text-base font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {values.map((value) => (
+          <code key={value} className="rounded-md bg-muted px-2.5 py-1.5 text-xs">
+            {value}
+          </code>
+        ))}
+      </div>
     </div>
   );
 }
