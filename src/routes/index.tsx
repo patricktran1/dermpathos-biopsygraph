@@ -17,7 +17,7 @@ function Welcome() {
   return (
     <div className="relative overflow-hidden">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[620px] opacity-75"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[650px] opacity-75"
         style={{
           background:
             "radial-gradient(60% 60% at 50% 0%, var(--lavender-soft) 0%, transparent 72%)",
@@ -26,20 +26,19 @@ function Welcome() {
       <div className="relative mx-auto flex max-w-6xl flex-col items-center px-6 pb-24 pt-20 text-center">
         <span className="chip bg-[var(--gold-soft)] text-[var(--gold)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--gold)]" />
-          Clinical obligation agent · Hackathon MVP
+          Abridge × Anthropic × EHR · Hackathon MVP
         </span>
         <h1 className="mt-7 font-display text-5xl font-semibold tracking-tight text-foreground md:text-7xl">
           Closed Care Loop
         </h1>
         <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted-foreground md:text-2xl">
-          The agent that carries every clinical obligation from documented to done.
+          Turn encounter intelligence into verified completed care.
         </p>
         <p className="mt-6 max-w-3xl text-base leading-relaxed text-foreground/75">
-          Pathology creates an obligation: review the result, reach the patient,
-          arrange the right care, and verify that care actually happened. Closed
-          Care Loop reconciles evidence across the workflow, proposes bounded
-          actions, blocks unsafe automation, and refuses to confuse activity with
-          closure.
+          Abridge captures the clinical conversation. Anthropic determines the
+          minimum safe workflow actions. Closed Care Loop executes those actions
+          through an EHR adapter and keeps the obligation open until the evidence
+          proves the patient received the intended care.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -51,16 +50,16 @@ function Welcome() {
             <span aria-hidden>→</span>
           </button>
           <Link
+            to="/integration-lab"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--lavender)] bg-card px-6 py-3 text-sm font-semibold text-[var(--lavender)] transition hover:bg-[var(--lavender-soft)]"
+          >
+            Run the event stack
+          </Link>
+          <Link
             to="/dashboard"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
           >
             Open command center
-          </Link>
-          <Link
-            to="/intake"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
-          >
-            Add a pathology result
           </Link>
         </div>
 
@@ -68,18 +67,18 @@ function Welcome() {
           {[
             {
               n: "01",
-              t: "Detect the gap",
-              d: "Find clinically significant results without documented communication, scheduling, or completed treatment.",
+              t: "Abridge identifies the obligation",
+              d: "Encounter intelligence and linked evidence become a stable obligation payload instead of disappearing inside a note.",
             },
             {
               n: "02",
-              t: "Act within bounds",
-              d: "Draft outreach, create tasks, and route work while preserving human control over clinical decisions.",
+              t: "Claude selects typed tools",
+              d: "The agent searches EHR evidence first, proposes the minimum safe action, and stops when records conflict.",
             },
             {
               n: "03",
-              t: "Verify the outcome",
-              d: "Keep the obligation open until the evidence proves that the patient received the required care.",
+              t: "The EHR proves closure",
+              d: "Tasks and drafts are activity. Completed treatment evidence is the outcome required to close the loop.",
             },
           ].map((feature) => (
             <div key={feature.n} className="card-clinical p-6">
@@ -98,17 +97,21 @@ function Welcome() {
           <div className="grid gap-6 md:grid-cols-[1fr_1.2fr] md:items-center">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                The Monday-morning demo
+                Monday-morning workflow
               </div>
               <h2 className="mt-3 font-display text-2xl font-semibold">
-                Three failure modes. One closed-loop agent.
+                One obligation layer. Any EHR.
               </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                OpenEMR FHIR is the reference adapter. The core agent contract stays
+                stable when the integration changes.
+              </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                ["Lost melanoma", "No documented contact"],
-                ["Wrong-site conflict", "Automation blocked"],
-                ["Canceled treatment", "False closure reopened"],
+                ["Lost melanoma", "Urgent outreach proposed"],
+                ["Wrong-site conflict", "Unsafe write blocked"],
+                ["Canceled treatment", "Obligation reopened"],
               ].map(([title, detail]) => (
                 <div key={title} className="rounded-lg bg-muted/55 p-4">
                   <div className="text-sm font-semibold">{title}</div>
