@@ -50,7 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong. Refresh the page or return to the overview.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -79,26 +79,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DermPathOS · BiopsyGraph" },
+      { title: "Closed Care Loop · Clinical Obligation Agent" },
       {
         name: "description",
         content:
-          "DermPathOS is a graph-aware pathology follow-up safety net for dermatology clinics. No biopsy result gets lost.",
+          "Closed Care Loop detects unresolved clinical obligations, proposes bounded actions, blocks unsafe automation, and verifies completed care.",
       },
-      { property: "og:title", content: "DermPathOS · BiopsyGraph" },
+      { property: "og:title", content: "Closed Care Loop" },
       {
         property: "og:description",
         content:
-          "A graph-aware pathology follow-up safety net for dermatology clinics.",
+          "The clinical obligation agent that carries care from documented to done.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "DermPathOS · BiopsyGraph" },
-      { name: "description", content: "DermPathOS is a graph-aware pathology follow-up safety net for dermatology clinics. No biopsy result gets lost." },
-      { property: "og:description", content: "DermPathOS is a graph-aware pathology follow-up safety net for dermatology clinics. No biopsy result gets lost." },
-      { name: "twitter:description", content: "DermPathOS is a graph-aware pathology follow-up safety net for dermatology clinics. No biopsy result gets lost." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4207b4f1-1e0e-422d-a108-5c74ef0558a1/id-preview-eecf9794--a77c07f9-fddc-4b6f-b64d-c89cbd1dcc3e.lovable.app-1783388173413.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4207b4f1-1e0e-422d-a108-5c74ef0558a1/id-preview-eecf9794--a77c07f9-fddc-4b6f-b64d-c89cbd1dcc3e.lovable.app-1783388173413.png" },
+      { name: "twitter:title", content: "Closed Care Loop" },
+      {
+        name: "twitter:description",
+        content:
+          "Detect clinical gaps, act within bounds, and verify completed care.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4207b4f1-1e0e-422d-a108-5c74ef0558a1/id-preview-eecf9794--a77c07f9-fddc-4b6f-b64d-c89cbd1dcc3e.lovable.app-1783388173413.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4207b4f1-1e0e-422d-a108-5c74ef0558a1/id-preview-eecf9794--a77c07f9-fddc-4b6f-b64d-c89cbd1dcc3e.lovable.app-1783388173413.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -138,11 +148,10 @@ function RootComponent() {
         <div className="flex min-h-screen flex-col">
           <AppHeader />
           <main className="flex-1">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
           </main>
           <footer className="border-t border-border/70 py-6 text-center text-xs text-muted-foreground">
-            DermPathOS · Internal operations tool · Mock data only — not for clinical decision-making.
+            Closed Care Loop · Synthetic data demo · Human-controlled clinical workflow
           </footer>
         </div>
       </DermStoreProvider>

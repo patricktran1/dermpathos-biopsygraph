@@ -9,80 +9,116 @@ function Welcome() {
   const navigate = useNavigate();
   const { loadDemoCases } = useDermStore();
 
-  const loadAndGo = () => {
+  const launchJudgeMode = () => {
     loadDemoCases();
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/judge-mode" });
   };
 
   return (
     <div className="relative overflow-hidden">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[520px] opacity-70"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[620px] opacity-75"
         style={{
           background:
-            "radial-gradient(60% 60% at 50% 0%, var(--lavender-soft) 0%, transparent 70%)",
+            "radial-gradient(60% 60% at 50% 0%, var(--lavender-soft) 0%, transparent 72%)",
         }}
       />
-      <div className="relative mx-auto flex max-w-5xl flex-col items-center px-6 pt-20 pb-24 text-center">
+      <div className="relative mx-auto flex max-w-6xl flex-col items-center px-6 pb-24 pt-20 text-center">
         <span className="chip bg-[var(--gold-soft)] text-[var(--gold)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--gold)]" />
-          BiopsyGraph · Hackathon MVP
+          Clinical obligation agent · Hackathon MVP
         </span>
-        <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight text-foreground md:text-6xl">
-          DermPathOS
+        <h1 className="mt-7 font-display text-5xl font-semibold tracking-tight text-foreground md:text-7xl">
+          Closed Care Loop
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-muted-foreground md:text-xl">
-          A graph-aware pathology follow-up safety net for dermatology clinics.
+        <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted-foreground md:text-2xl">
+          The agent that carries every clinical obligation from documented to done.
         </p>
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-foreground/80">
-          BiopsyGraph connects patients, lesions, pathology results, diagnoses,
-          required actions, notifications, scheduling, and physician review — so
-          no biopsy result falls through the cracks.
+        <p className="mt-6 max-w-3xl text-base leading-relaxed text-foreground/75">
+          Pathology creates an obligation: review the result, reach the patient,
+          arrange the right care, and verify that care actually happened. Closed
+          Care Loop reconciles evidence across the workflow, proposes bounded
+          actions, blocks unsafe automation, and refuses to confuse activity with
+          closure.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={launchJudgeMode}
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--lavender)] px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            Launch Judge Mode
+            <span aria-hidden>→</span>
+          </button>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
+          >
+            Open command center
+          </Link>
           <Link
             to="/intake"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--lavender)] px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
           >
-            Start Case Review
-            <span aria-hidden>→</span>
+            Add a pathology result
           </Link>
-          <button
-            onClick={loadAndGo}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
-          >
-            View Demo Cases
-          </button>
         </div>
 
-        <div className="mt-20 grid w-full gap-4 md:grid-cols-3">
+        <div className="mt-16 grid w-full gap-4 text-left md:grid-cols-3">
           {[
             {
-              t: "Every biopsy tracked",
-              d: "Patient → lesion → biopsy → result modeled as one graph.",
+              n: "01",
+              t: "Detect the gap",
+              d: "Find clinically significant results without documented communication, scheduling, or completed treatment.",
             },
             {
-              t: "Follow-up gaps surfaced",
-              d: "Missing notifications and unscheduled treatments become tasks.",
+              n: "02",
+              t: "Act within bounds",
+              d: "Draft outreach, create tasks, and route work while preserving human control over clinical decisions.",
             },
             {
-              t: "Explainable reasoning",
-              d: "Every task links back to the exact BiopsyGraph path that created it.",
+              n: "03",
+              t: "Verify the outcome",
+              d: "Keep the obligation open until the evidence proves that the patient received the required care.",
             },
-          ].map((f) => (
-            <div key={t_key(f.t)} className="card-clinical p-6 text-left">
-              <div className="h-8 w-8 rounded-md bg-[var(--lavender-soft)]" />
-              <h3 className="mt-4 text-base font-semibold">{f.t}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{f.d}</p>
+          ].map((feature) => (
+            <div key={feature.n} className="card-clinical p-6">
+              <div className="text-xs font-semibold tracking-[0.18em] text-[var(--lavender)]">
+                {feature.n}
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">{feature.t}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {feature.d}
+              </p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-8 w-full rounded-2xl border border-border bg-card/80 p-6 text-left shadow-sm backdrop-blur md:p-8">
+          <div className="grid gap-6 md:grid-cols-[1fr_1.2fr] md:items-center">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                The Monday-morning demo
+              </div>
+              <h2 className="mt-3 font-display text-2xl font-semibold">
+                Three failure modes. One closed-loop agent.
+              </h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ["Lost melanoma", "No documented contact"],
+                ["Wrong-site conflict", "Automation blocked"],
+                ["Canceled treatment", "False closure reopened"],
+              ].map(([title, detail]) => (
+                <div key={title} className="rounded-lg bg-muted/55 p-4">
+                  <div className="text-sm font-semibold">{title}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-}
-
-function t_key(s: string) {
-  return s.replace(/\s+/g, "-").toLowerCase();
 }
