@@ -1,144 +1,54 @@
-import { useState } from "react";
-
 interface Props {
   caseId: string;
   patientName: string;
 }
 
-type JsonValue = unknown;
-
-async function callJson(url: string, init?: RequestInit): Promise<JsonValue> {
-  const res = await fetch(url, init);
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { rawText: text, status: res.status };
-  }
-}
-
-function ResultBlock({ label, value }: { label: string; value: JsonValue }) {
-  if (value === null || value === undefined) return null;
-  return (
-    <div className="mt-3">
-      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </div>
-      <pre className="mt-1 max-h-64 overflow-auto rounded-md bg-muted/60 p-3 text-xs">
-        {JSON.stringify(value, null, 2)}
-      </pre>
-    </div>
-  );
-}
-
 export function CaseBiopsyGraphPanel({ caseId, patientName }: Props) {
-  const [syncing, setSyncing] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [syncResult, setSyncResult] = useState<JsonValue>(null);
-  const [verifyResult, setVerifyResult] = useState<JsonValue>(null);
-
-  const isSuccess = (r: JsonValue) =>
-    r !== null && typeof r === "object" && (r as { success?: boolean }).success === true;
-
-  const handleSync = async () => {
-    setSyncing(true);
-    setSyncResult(null);
-    const payload = { caseKey: caseId, case_id: caseId, patient_name: patientName };
-    console.log("[BiopsyGraph] sync request", payload);
-    const result = await callJson("/api/biopsygraph/sync-case", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    console.log("[BiopsyGraph] sync response", result);
-    setSyncResult(result);
-    setSyncing(false);
-  };
-
-  const handleVerify = async () => {
-    setVerifying(true);
-    setVerifyResult(null);
-    const payload = { caseKey: caseId, case_id: caseId, patient_name: patientName };
-    const result = await callJson("/api/biopsygraph/verify-case", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    console.log("[BiopsyGraph] verify response", result);
-    setVerifyResult(result);
-    setVerifying(false);
-  };
-
-  const syncMsg =
-    syncResult && typeof syncResult === "object"
-      ? (syncResult as { message?: string }).message
-      : undefined;
-  const verifyMsg =
-    verifyResult && typeof verifyResult === "object"
-      ? (verifyResult as { message?: string }).message
-      : undefined;
+  const nodes = [
+    "Abridge encounter",
+    "Clinical obligation",
+    "EHR evidence search",
+    "Approved action",
+    "Completed care evidence",
+    "Verified closure",
+  ];
 
   return (
-    <section className="card-clinical mt-8 p-6">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          BiopsyGraph (Neo4j) sync
-        </h2>
-        <span className="text-xs text-muted-foreground">
-          case_id: <code className="font-mono">{caseId}</code>
-        </span>
+    <section className="rounded-xl border border-border bg-card p-5">
+      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        Obligation evidence map
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Reads this case from Butterbase server-side and writes it into Neo4j.
-        Secrets stay on the server.
+      <h3 className="mt-2 text-lg font-semibold">{patientName}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+        The product does not require a graph database. It preserves the clinically
+        important relationship as an auditable evidence chain that can be stored in
+        the application database or represented through native EHR resources.
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="rounded-lg bg-[var(--lavender)] px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-        >
-          {syncing ? "Syncing…" : "Sync This Case to BiopsyGraph"}
-        </button>
-        <button
-          onClick={handleVerify}
-          disabled={verifying}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-accent disabled:opacity-50"
-        >
-          {verifying ? "Verifying…" : "Verify This Case in BiopsyGraph"}
-        </button>
+      <div className="mt-5 flex flex-wrap items-center gap-x-1 gap-y-3">
+        {nodes.map((node, index) => (
+          <div key={node} className="flex items-center gap-1">
+            <span
+              className={`rounded-lg border px-3 py-2 text-xs font-semibold ${
+                index < 2
+                  ? "border-[var(--lavender)]/25 bg-[var(--lavender-soft)] text-[var(--lavender)]"
+                  : index === nodes.length - 1
+                    ? "border-[var(--routine)]/25 bg-[var(--routine-soft)] text-[var(--routine)]"
+                    : "border-border bg-muted/35"
+              }`}
+            >
+              {node}
+            </span>
+            {index < nodes.length - 1 && (
+              <span className="text-muted-foreground">→</span>
+            )}
+          </div>
+        ))}
       </div>
 
-      {(syncMsg || verifyMsg) && (
-        <div className="mt-4 space-y-2">
-          {syncMsg && (
-            <div
-              className={`rounded-md p-3 text-sm ${
-                isSuccess(syncResult)
-                  ? "bg-[var(--routine-soft)] text-[var(--routine)]"
-                  : "bg-[var(--urgent-soft)] text-[var(--urgent)]"
-              }`}
-            >
-              {syncMsg}
-            </div>
-          )}
-          {verifyMsg && (
-            <div
-              className={`rounded-md p-3 text-sm ${
-                isSuccess(verifyResult)
-                  ? "bg-[var(--routine-soft)] text-[var(--routine)]"
-                  : "bg-[var(--urgent-soft)] text-[var(--urgent)]"
-              }`}
-            >
-              {verifyMsg}
-            </div>
-          )}
-        </div>
-      )}
-
-      <ResultBlock label="Last sync response" value={syncResult} />
-      <ResultBlock label="Last verify response" value={verifyResult} />
+      <div className="mt-5 rounded-lg bg-muted/45 px-3 py-2 font-mono text-[11px] text-muted-foreground">
+        case_id={caseId} · closure_policy=evidence_required
+      </div>
     </section>
   );
 }
