@@ -67,7 +67,7 @@ export interface EvidenceItem {
   label: string;
   value: string;
   source: string;
-  tone?: "neutral" | "good" | "warning" | "danger";
+  tone: "neutral" | "good" | "warning" | "danger";
 }
 
 export interface WorkflowStep {
