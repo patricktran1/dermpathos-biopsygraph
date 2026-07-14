@@ -46,8 +46,12 @@ export function ClaudeAgentPanel({ pathologyCase }: { pathologyCase: PathologyCa
         }),
       });
       const body = (await response.json()) as AgentResponse | { message?: string };
-      if (!response.ok || !("interpretation" in body)) {
-        throw new Error(body.message ?? "Agent review failed.");
+      if (!response.ok) {
+        const message = "message" in body ? body.message : undefined;
+        throw new Error(message ?? "Agent review failed.");
+      }
+      if (!("interpretation" in body)) {
+        throw new Error(body.message ?? "Agent review returned an invalid payload.");
       }
       setResult(body);
     } catch (err) {
