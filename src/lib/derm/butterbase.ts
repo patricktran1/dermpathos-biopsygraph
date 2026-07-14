@@ -5,6 +5,7 @@
  * /api/butterbase/*. The secret BUTTERBASE_API_KEY lives only on the server.
  */
 
+import { assessCase } from "./logic";
 import type { CaseAssessment, FollowUpTask, PathologyCase } from "./types";
 
 export const BUTTERBASE_PUBLIC_INFO = {
@@ -108,7 +109,14 @@ export async function testBackend(): Promise<BackendTestResult> {
 export interface RocketRideStatus {
   agent_completed: boolean;
   webhook_triggered?: boolean;
-  status?: "completed" | "triggered" | "failed" | "pending_configuration" | "missing_configuration" | "timeout_nonblocking" | "complete";
+  status?:
+    | "completed"
+    | "triggered"
+    | "failed"
+    | "pending_configuration"
+    | "missing_configuration"
+    | "timeout_nonblocking"
+    | "complete";
   http_status?: number | null;
   requested_at?: string;
   agent?: string;
@@ -276,20 +284,7 @@ export function caseToRow(
   assessment?: CaseAssessment,
 ): Record<string, string> {
   const id = c.id && c.id.trim() !== "" ? c.id : newId();
-  return buildCasePayload(
-    c,
-    assessment ?? {
-      priority: "Routine",
-      requiredAction: "",
-      taskTitle: "",
-      taskReason: "",
-      dueTiming: "",
-      flags: [],
-      graphPath: [],
-      isMalignant: false,
-    },
-    id,
-  );
+  return buildCasePayload(c, assessment ?? assessCase(c), id);
 }
 
 export function taskToRow(
