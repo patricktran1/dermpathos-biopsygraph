@@ -87,6 +87,7 @@ When OpenEMR credentials are unavailable, the EHR adapter runs in mock mode with
 - `/agent-review` model interpretation boundary
 - `/intake` pathology result intake
 - `/architecture` event-aligned technical architecture
+- `/api/health` deployment readiness and configured runtime modes
 
 ## Run locally
 
@@ -95,7 +96,23 @@ npm install
 npm run dev
 ```
 
+Use `npm run check` before pushing. It runs the production build and TypeScript validation.
+
 The safe deterministic demo requires no external credentials.
+
+## Deploy to Vercel
+
+Use this repository directly. Lovable TanStack projects deploy through Vercel's automatic framework detection.
+
+1. Import `patricktran1/dermpathos-biopsygraph` into Vercel.
+2. Keep the repository root as the project root.
+3. Leave framework, build, and output settings on automatic detection.
+4. Deploy with no environment variables for the first smoke test.
+5. Confirm `/api/health`, `/integration-lab`, and `/judge-mode`.
+
+The secret-free deployment runs in deterministic agent fallback mode with a mock EHR. Add the Anthropic variables below and redeploy to activate live Claude tool use.
+
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the complete deployment and OpenEMR sandbox checklist.
 
 ## Environment variables
 
