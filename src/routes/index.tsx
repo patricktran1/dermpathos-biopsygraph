@@ -9,9 +9,9 @@ function Welcome() {
   const navigate = useNavigate();
   const { loadDemoCases } = useDermStore();
 
-  const loadAndGo = () => {
+  const launchJudgeMode = () => {
     loadDemoCases();
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/judge-mode" });
   };
 
   return (
@@ -44,12 +44,18 @@ function Welcome() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <button
-            onClick={loadAndGo}
+            onClick={launchJudgeMode}
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--lavender)] px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            Run the 3-case demo
+            Launch Judge Mode
             <span aria-hidden>→</span>
           </button>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
+          >
+            Open command center
+          </Link>
           <Link
             to="/intake"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
