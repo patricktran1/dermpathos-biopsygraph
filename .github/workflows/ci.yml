@@ -29,4 +29,15 @@ jobs:
         run: npm run build
 
       - name: Typecheck generated application
-        run: npx tsc --noEmit
+        shell: bash
+        run: |
+          set -o pipefail
+          npx tsc --noEmit 2>&1 | tee tsc.log
+
+      - name: Upload TypeScript diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-diagnostics
+          path: tsc.log
+          if-no-files-found: error
