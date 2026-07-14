@@ -40,6 +40,20 @@ A patient was notified and scheduled for Mohs surgery, but the appointment was c
 
 A fourth benign case demonstrates that low-risk results still require documented communication before closure.
 
+## Judge Mode
+
+`/judge-mode` is a guided, presentation-safe walkthrough designed for a three-minute hackathon demo. It includes:
+
+- a clinic-wide obligation scan
+- one scene for each high-impact failure mode
+- source-linked evidence driving each decision
+- the next bounded agent action
+- visible human-approval requirements
+- a final model-versus-policy safety architecture
+- manual navigation and autoplay
+
+Judge Mode is intentionally non-destructive. It tells the story while preserving the live case workflows for deeper inspection.
+
 ## Safety model
 
 Closed Care Loop separates model interpretation from clinical policy enforcement.
@@ -108,6 +122,7 @@ flowchart LR
 ## Routes
 
 - `/` product thesis and demo entry
+- `/judge-mode` guided three-minute presentation
 - `/dashboard` clinical obligation command center
 - `/cases/:caseId` evidence, workflow, actions, audit trail, and graph reasoning
 - `/agent-review` visible Claude interpretation and fallback demonstration
@@ -163,12 +178,14 @@ Expansion workflows include abnormal labs, imaging follow-up, referrals, medicat
 
 ## Demo script
 
-1. Click **Run the 3-case demo**.
-2. Open Sarah Miller to show the lost melanoma and approve urgent outreach.
-3. Open Robert Lee to show the laterality conflict and safety interlock.
-4. Open James Carter to show the canceled appointment and reopen the obligation.
-5. Open **Claude Review** to show structured interpretation, source quotations, validation, and deterministic fallback.
-6. Close with: **A reviewed result is not closed care. Closed Care Loop keeps working until the patient receives the intended care.**
+1. From `/`, click **Launch Judge Mode**.
+2. On **Detect**, show the clinic scan and the three surfaced obligations.
+3. On **Escalate**, explain why the melanoma remains open even after outreach is approved.
+4. On **Block**, emphasize that the agent stops when the left/right evidence conflicts.
+5. On **Reopen**, explain why a canceled appointment invalidates administrative closure.
+6. On **Verify**, show the separation between Claude interpretation, deterministic policy, human authorization, and evidence-based closure.
+7. Open one live case or **Claude Review** only if judges ask for implementation depth.
+8. Close with: **A reviewed result is not closed care. Closed Care Loop keeps working until the patient receives the intended care.**
 
 ## Data and clinical disclaimer
 
