@@ -3,9 +3,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 const links = [
   { to: "/", label: "Overview" },
   { to: "/judge-mode", label: "Judge Mode" },
-  { to: "/dashboard", label: "Clinical Obligations" },
+  { to: "/integration-lab", label: "Event Stack" },
+  { to: "/dashboard", label: "Obligations" },
   { to: "/agent-review", label: "Claude Review" },
-  { to: "/intake", label: "Result Intake" },
   { to: "/architecture", label: "Architecture" },
 ] as const;
 
@@ -36,7 +36,7 @@ export function AppHeader() {
             </span>
           </span>
         </Link>
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-1 xl:flex">
           {links.map((link) => {
             const active =
               link.to === "/" ? pathname === "/" : pathname.startsWith(link.to);

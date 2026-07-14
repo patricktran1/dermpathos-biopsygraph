@@ -1,33 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import type { AuditEvent, FollowUpTask, PathologyCase } from "./types";
 import { assessCase } from "./logic";
-import { submitCaseAndTask } from "./integrations";
-import { buildCaseKey } from "./butterbase";
-
-export type CaseSyncMode = "butterbase_and_graph" | "local_demo";
-
-export interface CaseSyncStatus {
-  mode: CaseSyncMode;
-  caseKey: string;
-  taskKey?: string;
-  butterbaseCaseSaved: boolean;
-  butterbaseTaskSaved: boolean;
-  graphSynced: boolean;
-  graphVerified: boolean;
-  partialSuccess?: boolean;
-  graphError?: string;
-  rocketrideStatus?:
-    | "complete"
-    | "completed"
-    | "triggered"
-    | "failed"
-    | "pending_configuration"
-    | "missing_configuration"
-    | "timeout_nonblocking";
-  rocketrideMessage?: string;
-  rocketrideResponse?: unknown;
-  lastResponse?: unknown;
-}
 
 const audit = (
   id: string,
@@ -214,170 +187,101 @@ export const DEMO_CASES: PathologyCase[] = [
   },
 ];
 
-export interface AddCaseResult {
-  case: PathologyCase;
-  butterbaseAttempted: boolean;
-  caseOk: boolean;
-  taskOk: boolean;
-  graphSynced: boolean;
-  graphVerified: boolean;
-  errors: string[];
-  sync: CaseSyncStatus;
-}
-
 interface StoreValue {
   cases: PathologyCase[];
   tasks: Record<string, FollowUpTask>;
-  syncStatus: Record<string, CaseSyncStatus>;
-  addCase: (
-    c: Omit<PathologyCase, "id" | "createdAt">,
-  ) => Promise<AddCaseResult>;
-  recordSubmittedCase: (
-    pathologyCase: PathologyCase,
-    task: FollowUpTask,
-    sync: CaseSyncStatus,
-  ) => void;
+  addCase: (input: Omit<PathologyCase, "id" | "createdAt">) => PathologyCase;
   loadDemoCases: () => void;
   resetDemo: () => void;
   applyAgentAction: (caseId: string, actionId: string) => void;
   completeTask: (caseId: string) => void;
   getCase: (id: string) => PathologyCase | undefined;
-  getSyncStatus: (caseId: string) => CaseSyncStatus | undefined;
 }
 
 const StoreCtx = createContext<StoreValue | null>(null);
 
 const cloneDemoCases = () =>
-  DEMO_CASES.map((c) => ({
-    ...c,
-    auditTrail: c.auditTrail?.map((event) => ({ ...event })),
+  DEMO_CASES.map((item) => ({
+    ...item,
+    auditTrail: item.auditTrail?.map((event) => ({ ...event })),
   }));
 
-const createTask = (c: PathologyCase): FollowUpTask => {
-  const assessment = assessCase(c);
+const createTask = (pathologyCase: PathologyCase): FollowUpTask => {
+  const assessment = assessCase(pathologyCase);
   return {
-    caseId: c.id,
+    caseId: pathologyCase.id,
     title: assessment.taskTitle,
     priority: assessment.priority,
-    physician: c.physician,
+    physician: pathologyCase.physician,
     dueTiming: assessment.dueTiming,
     reason: assessment.taskReason,
-    status: c.closureVerified ? "Complete" : "Open",
+    status: pathologyCase.closureVerified ? "Complete" : "Open",
   };
 };
+
+const slug = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 export function DermStoreProvider({ children }: { children: ReactNode }) {
   const [cases, setCases] = useState<PathologyCase[]>([]);
   const [tasks, setTasks] = useState<Record<string, FollowUpTask>>({});
-  const [syncStatus, setSyncStatus] = useState<Record<string, CaseSyncStatus>>({});
 
   const value = useMemo<StoreValue>(() => {
     const seedDemo = () => {
       const nextCases = cloneDemoCases();
-      const initialTasks: Record<string, FollowUpTask> = {};
-      const initialSync: Record<string, CaseSyncStatus> = {};
-      for (const c of nextCases) {
-        initialTasks[c.id] = createTask(c);
-        initialSync[c.id] = {
-          mode: "local_demo",
-          caseKey: c.id,
-          butterbaseCaseSaved: false,
-          butterbaseTaskSaved: false,
-          graphSynced: false,
-          graphVerified: false,
-        };
-      }
       setCases(nextCases);
-      setTasks(initialTasks);
-      setSyncStatus(initialSync);
+      setTasks(
+        Object.fromEntries(nextCases.map((item) => [item.id, createTask(item)])),
+      );
     };
 
-    const addCase: StoreValue["addCase"] = async (c) => {
-      const caseKey = buildCaseKey(c.patientName);
-      const full: PathologyCase = {
-        ...c,
-        id: caseKey,
+    const addCase: StoreValue["addCase"] = (input) => {
+      const caseId = `case-${slug(input.patientName || "patient")}-${Date.now()}`;
+      const pathologyCase: PathologyCase = {
+        ...input,
+        id: caseId,
         appointmentStatus:
-          c.appointmentStatus ??
-          (c.treatmentScheduled === "Yes"
+          input.appointmentStatus ??
+          (input.treatmentScheduled === "Yes"
             ? "Scheduled"
-            : c.treatmentScheduled === "Not required"
+            : input.treatmentScheduled === "Not required"
               ? "Not required"
               : "Not scheduled"),
-        treatmentCompleted: c.treatmentCompleted ?? "No",
-        closureVerified: c.closureVerified ?? false,
-        auditTrail: c.auditTrail ?? [
-          audit(
-            `${caseKey}-created`,
-            "Agent",
-            "Clinical obligation created",
-            "Pathology result was converted into a monitored follow-up workflow.",
-            new Date().toLocaleString(),
-          ),
-        ],
+        treatmentCompleted: input.treatmentCompleted ?? "No",
+        closureVerified: input.closureVerified ?? false,
+        auditTrail:
+          input.auditTrail ??
+          [
+            audit(
+              `${caseId}-created`,
+              "Agent",
+              "Clinical obligation created",
+              "The pathology result was added to the local obligation queue and evaluated against closure rules.",
+              new Date().toLocaleString(),
+            ),
+          ],
         createdAt: Date.now(),
       };
-      setCases((prev) => [full, ...prev.filter((p) => p.id !== full.id)]);
-      const assessment = assessCase(full);
-      const errors: string[] = [];
-      const combined = await submitCaseAndTask(full, assessment);
-      const {
-        caseRes,
-        taskRes,
-        task,
-        graphSynced,
-        graphVerified,
-        graphError,
-        taskKey,
-        raw,
-      } = combined;
-      if (!caseRes.ok && caseRes.error) errors.push(caseRes.error);
-      if (!taskRes.ok && taskRes.error) errors.push(taskRes.error);
-      setTasks((prev) => ({ ...prev, [full.id]: task }));
-      const sync: CaseSyncStatus = {
-        mode: "butterbase_and_graph",
-        caseKey: combined.caseKey,
-        taskKey,
-        butterbaseCaseSaved: caseRes.ok,
-        butterbaseTaskSaved: taskRes.ok,
-        graphSynced,
-        graphVerified,
-        partialSuccess: caseRes.ok && taskRes.ok && (!graphSynced || !graphVerified),
-        graphError,
-        lastResponse: raw,
-      };
-      setSyncStatus((prev) => ({ ...prev, [full.id]: sync }));
-      return {
-        case: full,
-        butterbaseAttempted:
-          caseRes.source === "butterbase" || taskRes.source === "butterbase",
-        caseOk: caseRes.ok,
-        taskOk: taskRes.ok,
-        graphSynced,
-        graphVerified,
-        errors,
-        sync,
-      };
-    };
-
-    const recordSubmittedCase: StoreValue["recordSubmittedCase"] = (
-      pathologyCase,
-      task,
-      sync,
-    ) => {
-      setCases((prev) => [
+      setCases((previous) => [
         pathologyCase,
-        ...prev.filter((p) => p.id !== pathologyCase.id),
+        ...previous.filter((item) => item.id !== pathologyCase.id),
       ]);
-      setTasks((prev) => ({ ...prev, [pathologyCase.id]: task }));
-      setSyncStatus((prev) => ({ ...prev, [pathologyCase.id]: sync }));
+      setTasks((previous) => ({
+        ...previous,
+        [pathologyCase.id]: createTask(pathologyCase),
+      }));
+      return pathologyCase;
     };
 
     const applyAgentAction: StoreValue["applyAgentAction"] = (caseId, actionId) => {
       let updated: PathologyCase | undefined;
-      setCases((prev) =>
-        prev.map((c) => {
-          if (c.id !== caseId) return c;
+      setCases((previous) =>
+        previous.map((pathologyCase) => {
+          if (pathologyCase.id !== caseId) return pathologyCase;
           const now = new Date().toLocaleString([], {
             month: "short",
             day: "numeric",
@@ -396,7 +300,7 @@ export function DermStoreProvider({ children }: { children: ReactNode }) {
               };
               action = "Urgent outreach approved";
               detail =
-                "Patient notification was documented and the treatment-planning task remains open.";
+                "Patient notification was documented. Definitive treatment planning remains open.";
               break;
             case "send-benign-message":
               patch = {
@@ -408,12 +312,12 @@ export function DermStoreProvider({ children }: { children: ReactNode }) {
               break;
             case "resolve-site-conflict":
               patch = {
-                scheduledBodySite: c.bodySite,
+                scheduledBodySite: pathologyCase.bodySite,
                 treatmentScheduled: "Yes",
                 appointmentStatus: "Scheduled",
               };
               action = "Site conflict resolved";
-              detail = `Clinician verified ${c.bodySite} as the intended treatment site.`;
+              detail = `Clinician verified ${pathologyCase.bodySite} as the intended treatment site.`;
               break;
             case "reopen-canceled-care":
               patch = {
@@ -423,16 +327,16 @@ export function DermStoreProvider({ children }: { children: ReactNode }) {
               };
               action = "Clinical obligation reopened";
               detail =
-                "The canceled appointment was removed as closure evidence and the case returned to scheduling.";
+                "The canceled appointment was removed as closure evidence and returned to scheduling.";
               break;
             case "schedule-treatment":
               patch = {
-                scheduledBodySite: c.bodySite,
+                scheduledBodySite: pathologyCase.bodySite,
                 treatmentScheduled: "Yes",
                 appointmentStatus: "Scheduled",
               };
               action = "Treatment scheduling approved";
-              detail = `A definitive treatment request was created for ${c.bodySite}.`;
+              detail = `A definitive treatment request was prepared for ${pathologyCase.bodySite}.`;
               break;
             case "verify-treatment":
               patch = {
@@ -449,55 +353,57 @@ export function DermStoreProvider({ children }: { children: ReactNode }) {
               patch = { closureVerified: true };
               action = "Clinical obligation closed";
               detail =
-                "The agent verified notification, site consistency, and required treatment completion.";
+                "Notification, site consistency, and required treatment completion were verified.";
               break;
           }
 
-          const next: PathologyCase = {
-            ...c,
+          updated = {
+            ...pathologyCase,
             ...patch,
             auditTrail: [
-              ...(c.auditTrail ?? []),
-              audit(`${c.id}-${Date.now()}`, "Clinic", action, detail, now),
+              ...(pathologyCase.auditTrail ?? []),
+              audit(`${pathologyCase.id}-${Date.now()}`, "Clinic", action, detail, now),
             ],
           };
-          updated = next;
-          return next;
+          return updated;
         }),
       );
 
       if (updated) {
-        const nextTask = createTask(updated);
-        setTasks((prev) => ({ ...prev, [caseId]: nextTask }));
+        setTasks((previous) => ({
+          ...previous,
+          [caseId]: createTask(updated as PathologyCase),
+        }));
       }
     };
 
     return {
       cases,
       tasks,
-      syncStatus,
       addCase,
-      recordSubmittedCase,
       loadDemoCases: seedDemo,
       resetDemo: seedDemo,
       applyAgentAction,
       completeTask: (caseId) =>
-        setTasks((prev) =>
-          prev[caseId]
-            ? { ...prev, [caseId]: { ...prev[caseId], status: "Complete" } }
-            : prev,
+        setTasks((previous) =>
+          previous[caseId]
+            ? {
+                ...previous,
+                [caseId]: { ...previous[caseId], status: "Complete" },
+              }
+            : previous,
         ),
       getCase: (id) =>
-        cases.find((c) => c.id === id) ?? DEMO_CASES.find((c) => c.id === id),
-      getSyncStatus: (id) => syncStatus[id],
+        cases.find((item) => item.id === id) ??
+        DEMO_CASES.find((item) => item.id === id),
     };
-  }, [cases, tasks, syncStatus]);
+  }, [cases, tasks]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }
 
 export function useDermStore() {
-  const v = useContext(StoreCtx);
-  if (!v) throw new Error("useDermStore must be used inside DermStoreProvider");
-  return v;
+  const value = useContext(StoreCtx);
+  if (!value) throw new Error("useDermStore must be used inside DermStoreProvider");
+  return value;
 }
