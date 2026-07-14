@@ -2,132 +2,91 @@
 
 **The clinical obligation agent that carries care from documented to done.**
 
-Closed Care Loop detects unresolved obligations created by clinical care, gathers evidence across fragmented workflow systems, proposes bounded actions, blocks unsafe automation, and verifies that the intended care actually occurred.
+Closed Care Loop turns encounter intelligence into completed-care workflows. Abridge supplies the clinical conversation and supporting evidence. Anthropic selects typed tools. The application executes those tools through an EHR adapter and keeps the obligation open until the required outcome is verified.
 
 The hackathon MVP focuses on one high-risk dermatology workflow:
 
 > Pathology result → patient notification → correct treatment scheduling → completed treatment → verified closure
 
-The product is an evolution of DermPathOS / BiopsyGraph. The graph remains the evidence and relationship layer; Closed Care Loop is the agentic workflow and product layer.
+## Why this exists
 
-## Problem
-
-A biopsy result can be reviewed without the patient being contacted. The patient can be notified without treatment being scheduled. Treatment can be scheduled, then canceled, while a task remains marked handled. Conflicting laterality can also move into a surgical workflow unless someone catches it manually.
+A biopsy result can be reviewed without the patient being contacted. The patient can be notified without treatment being scheduled. Treatment can be scheduled and later canceled while a task still appears handled. A wrong-side order can also move forward unless someone compares the source evidence.
 
 Most systems track activity. Closed Care Loop tracks the clinical obligation until the outcome is proven.
 
-## Agent loop
+## Event stack
 
-1. **Detect** missing, conflicting, or stale evidence.
-2. **Decide** what bounded workflow is permitted by clinic policy.
-3. **Act** by drafting outreach, creating tasks, routing work, or stopping automation.
-4. **Verify** communication, scheduling, treatment, and final closure.
-5. **Escalate** whenever the record is incomplete or contradictory.
+### Abridge encounter intelligence
 
-## Three-case demo
+`src/lib/event-stack/abridge.ts` is the vendor adapter boundary. It accepts unknown JSON and normalizes the event-provided Abridge payload into a stable `EncounterInput` contract.
 
-### 1. Lost melanoma
+The exact hackathon schema can be mapped in this one file without changing the agent, approval boundary, EHR adapter, or UI.
 
-A melanoma in situ result has been available for four days. The agent finds no documented patient contact, referral, or treatment plan and proposes urgent clinician-reviewed outreach.
+### Anthropic tool-use agent
 
-### 2. Wrong-site conflict
+`POST /api/agent/orchestrate` implements the client-tool loop:
 
-The pathology report says **left cheek**, while the scheduling request says **right cheek**. The agent blocks the workflow and requires clinician verification instead of guessing.
+1. Claude receives normalized encounter intelligence.
+2. Claude must search EHR evidence first.
+3. Claude selects one or more typed tools.
+4. The application approves, previews, or blocks each call.
+5. The EHR adapter executes approved calls.
+6. Tool results are returned to Claude.
+7. Closure remains open until evidence satisfies deterministic criteria.
 
-### 3. False closure
+The current tools are:
 
-A patient was notified and scheduled for Mohs surgery, but the appointment was canceled and never replaced. The agent reopens the obligation because scheduled is not the same as treated.
+- `ehr_search_evidence`
+- `ehr_create_task`
+- `ehr_draft_patient_communication`
+- `ehr_create_service_request`
+- `ehr_verify_closure`
 
-A fourth benign case demonstrates that low-risk results still require documented communication before closure.
+### EHR adapter
 
-## Judge Mode
+`src/lib/event-stack/openemr.ts` implements the reference adapter using configurable FHIR endpoints.
 
-`/judge-mode` is a guided, presentation-safe walkthrough designed for a three-minute hackathon demo. It includes:
+The agent depends on the `EhrAdapter` interface, not OpenEMR itself. A future Epic, Oracle Health, athenahealth, or custom EHR adapter can replace OpenEMR without changing the agent contract.
 
-- a clinic-wide obligation scan
-- one scene for each high-impact failure mode
-- source-linked evidence driving each decision
-- the next bounded agent action
-- visible human-approval requirements
-- a final model-versus-policy safety architecture
-- manual navigation and autoplay
+Reference resources:
 
-Judge Mode is intentionally non-destructive. It tells the story while preserving the live case workflows for deeper inspection.
+- `Task`
+- `Communication`
+- `ServiceRequest`
+- `Procedure`
 
-## Safety model
+## Safety boundary
 
-Closed Care Loop separates model interpretation from clinical policy enforcement.
+Read-only evidence tools may execute without approval.
 
-### Claude interpretation layer
+Every EHR write is blocked until the application receives explicit approval for the exact tool name. Even approved patient communication is created only as a draft. The prototype does not autonomously send messages, change treatment, or mark an obligation closed.
 
-Claude can:
+OpenEMR writes also require the server-side environment flag:
 
-- interpret messy pathology and workflow context
-- identify potential operational risks
-- return structured output
-- quote evidence from the supplied record
-- surface unresolved questions
-
-Claude cannot:
-
-- diagnose or independently alter treatment
-- override deterministic closure rules
-- resolve contradictory body sites
-- send patient-facing communication without approval
-- close a clinical obligation without required evidence
-
-### Deterministic policy layer
-
-Typed application logic controls:
-
-- urgency and deadline rules
-- allowed actions
-- site-conflict blocking
-- workflow state transitions
-- closure requirements
-- audit events
-- fallback behavior
-
-Model output is schema-validated. If the model call fails, returns invalid JSON, or is not configured, the application uses deterministic fallback logic and labels that mode visibly.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    R[Pathology and clinic records] --> I[Claude interpretation layer]
-    I --> V[Structured-output validation]
-    V --> P[Deterministic policy engine]
-    P -->|safe| A[Bounded agent actions]
-    P -->|conflict or missing evidence| H[Human review]
-    A --> C[Communication and scheduling workflows]
-    C --> E[Evidence reconciliation]
-    E --> G[(BiopsyGraph / Neo4j)]
-    G --> P
-    P -->|all closure criteria met| X[Verified closure]
-    P -->|criteria unmet| O[Open clinical obligation]
-    O --> A
+```bash
+OPENEMR_ALLOW_WRITES=true
 ```
 
-## Current stack
+Without that flag, the adapter returns a safe write preview.
 
-- TanStack Start, React 19, TypeScript
-- Tailwind CSS
-- Claude Messages API through a server route
-- Zod validation for model output
-- Neo4j graph integration
-- Butterbase persistence integration
-- RocketRide integration adapter
-- Local synthetic-data fallback for reliable demos
+## Reliable fallback
+
+The full tool trace works without external credentials.
+
+When Anthropic credentials are unavailable or a model request fails, the application runs the identical approval-gated EHR tool path using a deterministic fallback and labels the mode visibly.
+
+When OpenEMR credentials are unavailable, the EHR adapter runs in mock mode with synthetic evidence and resources.
 
 ## Routes
 
-- `/` product thesis and demo entry
+- `/` product thesis and event-stack entry
 - `/judge-mode` guided three-minute presentation
+- `/integration-lab` Abridge → Anthropic → EHR execution trace
 - `/dashboard` clinical obligation command center
-- `/cases/:caseId` evidence, workflow, actions, audit trail, and graph reasoning
-- `/agent-review` visible Claude interpretation and fallback demonstration
+- `/cases/:caseId` evidence, workflow, actions, and audit history
+- `/agent-review` model interpretation boundary
 - `/intake` pathology result intake
-- `/architecture` integration architecture
+- `/architecture` event-aligned technical architecture
 
 ## Run locally
 
@@ -136,57 +95,64 @@ npm install
 npm run dev
 ```
 
-Then open the local URL printed by Vite.
+The safe deterministic demo requires no external credentials.
 
 ## Environment variables
 
-The deterministic demo works without external credentials.
-
-To enable live Claude interpretation:
+### Anthropic
 
 ```bash
 ANTHROPIC_API_KEY=...
 ANTHROPIC_MODEL=...
 ```
 
-The model identifier is intentionally configured through the environment rather than hardcoded so the deployment can use the event-approved Anthropic model.
+The model is configured through the environment so the event-approved Anthropic model can be used without a code change.
 
-Existing optional integrations use:
+### OpenEMR reference adapter
 
 ```bash
-BUTTERBASE_API_URL=...
-BUTTERBASE_APP_ID=...
-BUTTERBASE_API_KEY=...
-NEO4J_URI=...
-NEO4J_USERNAME=...
-NEO4J_PASSWORD=...
-ROCKETRIDE_URL=...
-ROCKETRIDE_API_KEY=...
+OPENEMR_FHIR_BASE_URL=...
+OPENEMR_ACCESS_TOKEN=...
+OPENEMR_ALLOW_WRITES=false
 ```
 
-Only describe an integration as live during judging when its credentials are configured and its end-to-end path has been tested.
+`OPENEMR_FHIR_BASE_URL` should point directly to the configured FHIR base path. Authentication and scopes remain deployment-specific.
+
+## Three failure modes
+
+### Lost melanoma
+
+The agent finds a malignant pathology result with no documented patient contact, treatment request, or completed-care evidence. It proposes urgent outreach and definitive treatment planning while keeping the obligation open.
+
+### Wrong-site conflict
+
+Pathology says left cheek while scheduling says right cheek. The agent blocks the workflow and requires human verification instead of guessing.
+
+### False closure
+
+The patient was notified and scheduled, but the appointment was canceled. The agent reopens the obligation because scheduled is not treated.
+
+## Demo sequence
+
+1. Open `/integration-lab`.
+2. Run **Inspect without approval**.
+3. Show the EHR search executing while all write tools are blocked.
+4. Run **Approve bounded writes**.
+5. Show the same tools returning safe EHR resources or previews.
+6. Emphasize that patient communication remains a draft and closure remains unverified.
+7. Open `/judge-mode` for the three clinical failure stories.
+8. Close with: **A reviewed result is not closed care. Closed Care Loop keeps working until the patient receives the intended care.**
 
 ## Production pathway
 
-1. Ingest obligations from ambient notes, pathology feeds, fax, and EHR events.
-2. Map each obligation to clinic-authored policy and closure criteria.
-3. Connect approved actions to EHR tasks, communications, scheduling, and referral systems.
-4. Reconcile new evidence continuously.
-5. Maintain an auditable obligation graph across specialties.
+1. Replace the synthetic Abridge payload with the event-provided resource or webhook schema.
+2. Connect the EHR adapter to the hackathon OpenEMR instance or another available EHR.
+3. Add organization-authored obligation policies and closure criteria.
+4. Persist tool traces, approvals, and evidence reconciliation events.
+5. Add continuous monitoring for new communication, scheduling, and procedure evidence.
 
 Expansion workflows include abnormal labs, imaging follow-up, referrals, medication monitoring, prior authorization, and post-discharge care.
 
-## Demo script
-
-1. From `/`, click **Launch Judge Mode**.
-2. On **Detect**, show the clinic scan and the three surfaced obligations.
-3. On **Escalate**, explain why the melanoma remains open even after outreach is approved.
-4. On **Block**, emphasize that the agent stops when the left/right evidence conflicts.
-5. On **Reopen**, explain why a canceled appointment invalidates administrative closure.
-6. On **Verify**, show the separation between Claude interpretation, deterministic policy, human authorization, and evidence-based closure.
-7. Open one live case or **Claude Review** only if judges ask for implementation depth.
-8. Close with: **A reviewed result is not closed care. Closed Care Loop keeps working until the patient receives the intended care.**
-
 ## Data and clinical disclaimer
 
-All included patients and records are synthetic. This repository is a hackathon prototype, not a deployed medical device or a substitute for clinician judgment. Production use would require security, privacy, clinical governance, integration validation, monitoring, and organization-specific policy configuration.
+All included patients and records are synthetic. This repository is a hackathon prototype, not a deployed medical device or a substitute for clinician judgment. Production use requires security, privacy, clinical governance, integration validation, monitoring, and organization-specific policy configuration.
