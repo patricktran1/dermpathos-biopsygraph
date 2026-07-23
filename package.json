@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "dermpathos-biopsygraph",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -9,6 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test test/*.test.ts",
+    "validate": "npm run lint && npm test && npm run check && npm run build",
     "format": "prettier --write ."
   },
   "dependencies": {
