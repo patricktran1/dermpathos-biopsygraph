@@ -1,0 +1,11 @@
+* @patricktran1
+
+# Clinical prioritization and closed-loop follow-up logic
+/src/lib/derm/logic.ts @patricktran1
+/src/lib/derm/pathologyParser.ts @patricktran1
+/test/ @patricktran1
+
+# Server-side integrations and workflow automation
+/src/routes/api/ @patricktran1
+/src/lib/derm/integrations.ts @patricktran1
+/src/lib/derm/butterbase.ts @patricktran1
