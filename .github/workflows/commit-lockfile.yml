@@ -39,8 +39,9 @@ jobs:
       - name: Verify scope and commit
         shell: bash
         run: |
-          git status --short | tee lockfile-status.txt
+          rm -rf node_modules
           changed="$(git status --short)"
+          printf '%s\n' "$changed" > lockfile-status.txt
           test "$changed" = '?? package-lock.json'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
