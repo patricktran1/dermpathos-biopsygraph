@@ -1,30 +1,30 @@
-name: Create DermPathOS npm lockfile
+name: Generate DermPathOS npm lockfile
 
 on:
-  push:
-    branches: [chore/supply-chain-depth]
+  pull_request:
+    branches: [main]
     paths:
       - 'package.json'
       - '.github/workflows/create-lockfile.yml'
-  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: dermpathos-lockfile-creation
-  cancel-in-progress: false
+  group: dermpathos-lockfile-artifact-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  create-lockfile:
+  generate-lockfile:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Check out branch
+      - name: Check out pull request head
         uses: actions/checkout@v4
         with:
-          ref: chore/supply-chain-depth
+          ref: ${{ github.head_ref }}
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,14 +36,12 @@ jobs:
           npm install --no-audit --no-fund
           npm ci --no-audit --no-fund
           git diff --check
+          test -f package-lock.json
 
-      - name: Commit lockfile
-        shell: bash
-        run: |
-          changed="$(git status --short)"
-          test "$changed" = '?? package-lock.json'
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package-lock.json
-          git commit -m 'Add reproducible DermPathOS npm lockfile'
-          git push origin HEAD:chore/supply-chain-depth
+      - name: Upload verified lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: dermpathos-package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 5
