@@ -33,7 +33,7 @@ test('surfaces an urgent melanoma gap and closes its follow-up task', async ({ p
   await complete.click()
   await expect(page.getByRole('button', { name: 'Completed' })).toBeDisabled()
 
-  await page.getByRole('link', { name: 'Dashboard' }).click()
+  await page.getByRole('link', { name: '← Dashboard', exact: true }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
   await expect(page.getByRole('row').filter({ hasText: 'Sarah Miller' })).toContainText('Complete')
 })
