@@ -20,9 +20,13 @@ test('surfaces an urgent melanoma gap and closes its follow-up task', async ({ p
   await expect(page.getByRole('heading', { name: 'Sarah Miller' })).toBeVisible()
   await expect(page.getByText('Melanoma in situ, margins involved.')).toBeVisible()
   await expect(page.getByText('Recommended operational action')).toBeVisible()
+
+  const graph = page.locator('#graph')
   await expect(page.getByRole('heading', { name: 'BiopsyGraph reasoning path' })).toBeVisible()
-  await expect(page.locator('#graph')).toContainText('Melanoma in situ')
-  await expect(page.locator('#graph')).toContainText('Task')
+  await expect(graph).toContainText('Melanoma in Situ')
+  await expect(graph).toContainText('Patient Not Notified')
+  await expect(graph).toContainText('No Treatment Scheduled')
+  await expect(graph).toContainText('Urgent Physician Review Task')
 
   const complete = page.getByRole('button', { name: 'Mark Complete' })
   await expect(complete).toBeEnabled()
