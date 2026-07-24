@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Check out pull request head
+      - name: Check out current pull request head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
