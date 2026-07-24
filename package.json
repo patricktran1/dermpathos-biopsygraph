@@ -12,9 +12,9 @@
     "lint:all": "eslint .",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/*.test.ts",
-    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test test/*.test.ts",
+    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test-coverage-include='src/lib/derm/logic.ts' --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=90 --test test/*.test.ts",
     "test:e2e": "playwright test",
-    "validate": "npm run lint && npm test && npm run check && npm run build",
+    "validate": "npm run lint && npm test && npm run test:coverage && npm run check && npm run build",
     "format": "prettier --write ."
   },
   "dependencies": {
