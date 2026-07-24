@@ -1,8 +1,8 @@
 name: Commit verified DermPathOS lockfile
 
 on:
-  push:
-    branches: [chore/supply-chain-depth]
+  pull_request:
+    branches: [main]
     paths:
       - '.github/workflows/commit-lockfile.yml'
 
@@ -15,14 +15,15 @@ concurrency:
 
 jobs:
   commit-lockfile:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Check out branch
+      - name: Check out pull request head
         uses: actions/checkout@v4
         with:
-          ref: chore/supply-chain-depth
+          ref: ${{ github.head_ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -38,10 +39,20 @@ jobs:
       - name: Verify scope and commit
         shell: bash
         run: |
+          git status --short | tee lockfile-status.txt
           changed="$(git status --short)"
           test "$changed" = '?? package-lock.json'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add package-lock.json
           git commit -m 'Add reproducible DermPathOS npm lockfile'
-          git push origin HEAD:chore/supply-chain-depth
+          git push origin HEAD:${{ github.head_ref }}
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dermpathos-lockfile-commit-diagnostics
+          path: lockfile-status.txt
+          if-no-files-found: warn
+          retention-days: 5
