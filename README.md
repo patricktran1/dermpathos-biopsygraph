@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/ci.yml/badge.svg)](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/codeql.yml/badge.svg)](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/codeql.yml)
+[![Dependency Review](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/patricktran1/dermpathos-biopsygraph/actions/workflows/dependency-review.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/patricktran1/dermpathos-biopsygraph/badge)](https://scorecard.dev/viewer/?uri=github.com/patricktran1/dermpathos-biopsygraph)
 
 **A closed-loop pathology follow-up safety net for dermatology.**
 
@@ -94,21 +96,28 @@ The graph is designed to answer operational questions such as:
 - Human clinical review remains required.
 - No real patient information should be committed to this repository or used in public demonstrations.
 
-## Quality gates
+## Automated quality and supply-chain policy
 
-Every pull request runs:
+Every pull request exercises the same production-shaped evidence path:
 
-```bash
-npm run lint
-npm test
-npm run test:coverage
-npm run check
-npm run build
-```
+- a committed Node 22 npm lockfile and `npm ci` make installs reproducible in both CI jobs
+- linting and deterministic clinical regression tests
+- enforced coverage floors of **100% lines**, **100% functions**, and **90% branches** for `src/lib/derm/logic.ts`
+- TypeScript validation and a production TanStack Start build
+- a verified runnable server artifact at `.output/server/index.mjs`
+- a Playwright flow that surfaces an urgent melanoma follow-up gap, inspects the graph path, completes the task, and verifies persisted dashboard state
+- a high-severity npm audit with retained JSON evidence
+- blocking pull-request dependency review across runtime and development dependencies
+- deterministic dependency checks for npm-registry provenance, SHA-512 integrity, approved licenses, and moderate-or-higher vulnerabilities
+- exact version-pinned evidence when published package metadata omits a license field
+- retained coverage, audit, dependency-review, trace, screenshot, video, and browser-report artifacts
+- CodeQL on pull requests, `main`, and a weekly schedule
+- weekly OpenSSF Scorecard analysis with OIDC publication, retained SARIF, and GitHub code-scanning upload
+- Dependabot maintenance for npm and GitHub Actions
 
-The initial regression suite covers melanoma, SCC, BCC, benign nevi, unrecognized diagnoses, open notification gaps, treatment-scheduling gaps, and priority ordering.
+The clinical regression suite covers melanoma, SCC, BCC, benign nevi, unrecognized diagnoses, open notification gaps, treatment-scheduling gaps, and priority ordering.
 
-CodeQL runs on pull requests, pushes to `main`, and a weekly schedule. Dependabot reviews npm and GitHub Actions maintenance.
+These automated controls validate deterministic software and supply-chain behavior. They do not establish clinical safety, live integration reliability, HIPAA compliance, treatment completion, regulatory readiness, or production service levels.
 
 ## Local development
 
@@ -118,7 +127,7 @@ Requirements:
 - npm
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -126,6 +135,7 @@ Run the complete validation gate:
 
 ```bash
 npm run validate
+npm run test:e2e
 ```
 
 Environment variables for optional integrations should be configured locally or through the deployment platform. Do not commit credentials.
@@ -133,16 +143,20 @@ Environment variables for optional integrations should be configured locally or 
 ## Repository map
 
 ```text
-src/lib/derm/logic.ts                 deterministic case assessment
-src/lib/derm/pathologyParser.ts       pathology-field extraction helpers
-src/lib/derm/integrations.ts          integration orchestration
-src/lib/derm/butterbase.ts            Butterbase persistence
-src/routes/api/biopsygraph/           graph synchronization and verification
-src/routes/api/daytona/               optional sandbox validation
-src/routes/architecture.tsx           in-product architecture view
-test/assess-case.test.ts              clinical regression fixtures
-.github/workflows/ci.yml               validation gate
-.github/workflows/codeql.yml           security analysis
+src/lib/derm/logic.ts                    deterministic case assessment
+src/lib/derm/pathologyParser.ts          pathology-field extraction helpers
+src/lib/derm/integrations.ts             integration orchestration
+src/lib/derm/butterbase.ts               Butterbase persistence
+src/routes/api/biopsygraph/              graph synchronization and verification
+src/routes/api/daytona/                  optional sandbox validation
+src/routes/architecture.tsx              in-product architecture view
+test/assess-case.test.ts                 clinical regression fixtures
+package-lock.json                        reproducible Node 22 dependency graph
+scripts/review-dependency-changes.mjs    retained dependency policy and report
+.github/workflows/ci.yml                 clean install, coverage, build, and browser evidence
+.github/workflows/dependency-review.yml  blocking pull-request dependency review
+.github/workflows/codeql.yml             extended security analysis
+.github/workflows/scorecard.yml          OpenSSF publication and SARIF upload
 ```
 
 ## Contributing
