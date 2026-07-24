@@ -98,7 +98,12 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build production application
+        env:
+          PLAYWRIGHT_PRODUCTION: "1"
         run: npm run build
+
+      - name: Verify production server artifact
+        run: test -f .output/server/index.mjs
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
